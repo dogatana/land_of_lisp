@@ -5,7 +5,7 @@
 (defparameter *visited-nodes* nil)
 (defparameter *node-num* 10)
 (defparameter *edge-num* 15)
-(defparameter *worm-num* 2)
+(defparameter *worm-num* 3)
 (defparameter *cop-odds* 5)
 (defparameter *player-pos* nil)
 
@@ -125,7 +125,9 @@
   (setf *congestion-city-nodes* (make-city-nodes *congestion-city-edges*))
   (setf *player-pos* (find-empty-node))
   (setf *visited-nodes* (list *player-pos*))
-  (draw-city))
+  (if *player-pos*
+      (draw-city)
+      '(not enough space for you)))
 
 ;; (defun find-empty-node ()
 ;;   (let ((x (random-node)))
