@@ -4,9 +4,9 @@
 (defparameter *congestion-city-edges* nil)
 (defparameter *visited-nodes* nil)
 (defparameter *node-num* 10)
-(defparameter *edge-num* 15)
-(defparameter *worm-num* 3)
-(defparameter *cop-odds* 5)
+(defparameter *edge-num* 10)
+(defparameter *worm-num* 1)
+(defparameter *cop-odds* 50)
 (defparameter *player-pos* nil)
 
 (defun random-node ()
@@ -120,14 +120,14 @@
 		       (when (some #'cdr (cdr (assoc n edge-alist)))
 			 '(sirens!))))))
 
-(defun new-game ()
-  (setf *congestion-city-edges* (make-city-edges))
-  (setf *congestion-city-nodes* (make-city-nodes *congestion-city-edges*))
-  (setf *player-pos* (find-empty-node))
-  (setf *visited-nodes* (list *player-pos*))
-  (if *player-pos*
-      (draw-city)
-      '(not enough space for you)))
+;; (defun new-game ()
+;;   (setf *congestion-city-edges* (make-city-edges))
+;;   (setf *congestion-city-nodes* (make-city-nodes *congestion-city-edges*))
+;;   (setf *player-pos* (find-empty-node))
+;;   (setf *visited-nodes* (list *player-pos*))
+;;   (if *player-pos*
+;;       (draw-city)
+;;       '(not enough space for you)))
 
 ;; (defun find-empty-node ()
 ;;   (let ((x (random-node)))
@@ -143,4 +143,39 @@
 (defun draw-city ()
   (ugraph->png "city" *congestion-city-nodes* *congestion-city-edges*))
 
+(defun known-city-nodes ()
+  (mapcar (lambda (node)
+	    (if (member node *visited-nodes*)
+		(let ((n (assoc node *congestion-city-nodes*)))
+		  (if (eql node *player-pos*)
+		      (append n '(*))
+		      n))
+		(list node '?)))
+	  (remove-duplicates
+	   (append *visited-nodes*
+		   (mapcan (lambda (node)
+			     (mapcar #'car
+				     (cdr (assoc node
+						 *congestion-city-edges*))))
+			   *visited-nodes*)))))
 
+(defun known-city-edges ()
+  (mapcar (lambda (node)
+	    (cons node (mapcar (lambda (x)
+				 (if (member (car x) *visited-nodes*)
+				     x
+				     (list (car x))))
+			       (cdr (assoc node *congestion-city-edges*)))))
+	  *visited-nodes*))
+
+(defun draw-known-city ()
+  (ugraph->png "known-city" (known-city-nodes) (known-city-edges)))
+
+(defun new-game ()
+  (setf *congestion-city-edges* (make-city-edges))
+  (setf *congestion-city-nodes* (make-city-nodes *congestion-city-edges*))
+  (setf *player-pos* (find-empty-node))
+  (setf *visited-nodes* (list *player-pos*))
+  (if *player-pos*
+      (progn (draw-city) (draw-known-city))
+      '(not enough space for you)))
