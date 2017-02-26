@@ -129,15 +129,17 @@
 ;;       (draw-city)
 ;;       '(not enough space for you)))
 
-;; (defun find-empty-node ()
+;; (defun find-empty-node0 ()
 ;;   (let ((x (random-node)))
 ;;     (if (cdr (assoc x *congestion-city-nodes*))
 ;; 	(find-empty-node)
 ;; 	x)))
 
 (defun find-empty-node ()
-  (let ((lst (remove-if (lambda (x) (cdr x))
-			*congestion-city-nodes*)))
+  (let ((lst (mapcar #'car
+		     (remove-if (lambda (x) (cdr x))
+				*congestion-city-nodes*))))
+    ;; (print lst)
     (when lst (nth (random (length lst)) lst))))
 
 (defun draw-city ()
