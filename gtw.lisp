@@ -6,7 +6,7 @@
 (defparameter *node-num* 10)
 (defparameter *edge-num* 10)
 (defparameter *worm-num* 1)
-(defparameter *cop-odds* 50)
+(defparameter *cop-odds* 10)
 (defparameter *player-pos* nil)
 
 (defun random-node ()
@@ -181,3 +181,33 @@
   (if *player-pos*
       (progn (draw-city) (draw-known-city))
       '(not enough space for you)))
+
+(defun handle-direction (pos charging)
+  (let ((edge (assoc pos
+		     (cdr (assoc *player-pos* *congestion-city-edges*)))))
+    (if edge
+	(handle-new-place edge pos charging)
+	(princ "That location does not exsit!"))))
+
+(defun handle-new-place (edge pos charging)
+  (let* ((node (assoc pos *congestion-city-nodes*))
+	 (has-worm (and (member 'glow-worm node)
+			(not (member pos *visited-nodes*)))))
+    (pushnew pos *visited-nodes*)
+    (setf *player-pos* pos)
+    (draw-known-city)
+    (cond ((member 'cops edge) (princ "You ran int the cops. Gamve Over."))
+	  ((member 'wumpus node) (if charging
+				     (princ "You found the Whumps!")
+				     (princ "You ran int the Wumps")))
+	  (charging (princ "You wasted your last bullet. Game Over."))
+	  (has-worm (let ((new-pos (random-node)))
+		      (princ "You ran into a Glow Worm Gang! You're now at ")
+		      (princ new-pos)
+		      (handle-new-place nil new-pos nil))))))
+
+(defun walk (pos)
+  (handle-direction pos nil))
+
+(defun charge (pos)
+  (handle-direction pos t))
