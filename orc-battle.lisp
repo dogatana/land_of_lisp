@@ -1,8 +1,8 @@
-(defparameter *player-helth* nil)
+(defparameter *player-health* nil)
 (defparameter *player-agility* nil)
 (defparameter *player-strength* nil)
 
-(defparameter *monters* nil)
+(defparameter *monsters* nil)
 (defparameter *monster-builders* nil)
 (defparameter *monster-num* 12)
 
@@ -25,7 +25,7 @@
     (fresh-line)
     (map 'list
 	 (lambda (m)
-	   (or (moster-dead m) (monster-attack m)))
+	   (or (monster-dead m) (monster-attack m)))
 	 *monsters*)
     (game-loop)))
 
@@ -43,7 +43,7 @@
   (princ *player-health*)
   (princ ", a n aligity of ")
   (princ *player-agility*)
-  (princ ", and a streanght of ")
+  (princ ", and a strength of ")
   (princ *player-strength*)
   (princ "."))
 
@@ -52,16 +52,16 @@
   (princ "Attack style: [s]tab [d]ouble swing [r]oundhouse:")
   (case (read)
     (s (monster-hit (pick-monster)
-		    (+ 2 (randval (ash *player-strength -1)))))
-    (d (let ((x (randvak (truncate (/ *player-strength 6)))))
+		    (+ 2 (randval (ash *player-strength* -1)))))
+    (d (let ((x (randval (truncate (/ *player-strength* 6)))))
 	 (princ "Your double swing has a strength of ")
 	 (princ x)
 	 (fresh-line)
-	 (monter-hit (pick-monster) x)
-	 (uness (monsters-dead)
+	 (monster-hit (pick-monster) x)
+	 (unless (monsters-dead)
 		(monster-hit (pick-monster) x))))
     (otherwise (dotimes (x (1+ (randval (truncate (/ *player-strength* 3)))))
-		 (unless (monsters-daed)
+		 (unless (monsters-dead)
 		   (monster-hit (random-monster) 1))))))
 
 (defun randval (n)
@@ -79,12 +79,12 @@
   (let ((x (read)))
     (if (not (and (integerp x) (>= x 1) (<= x *monster-num*)))
 	(progn (princ "That is not a valid monster number.")
-	       (pic-monster))
+	       (pick-monster))
 	(let ((m (aref *monsters* (1- x))))
 	  (if (monster-dead m)
 	      (progn (princ "That monster is already dead.")
 		     (pick-monster))
-	      (m))))))
+	      m)))))
 
 (defun init-monsters ()
   (setf *monsters*
@@ -96,7 +96,7 @@
 
 			     
 
-(defun monser-dead (m)
+(defun monster-dead (m)
   (<= (monster-health m) 0))
 
 (defun monsters-dead ()
@@ -104,12 +104,13 @@
 
 (defun show-monsters ()
   (fresh-line)
-  (pric "Your foes:")
+  (princ "Your foes:")
   (let ((x 0))
     (map 'list
 	 (lambda (m)
 	   (fresh-line)
 	   (princ "  ")
+	   (princ (incf x))
 	   (princ ". ")
 	   (if (monster-dead m)
 	       (princ "**dead**")
@@ -119,6 +120,7 @@
 		      (monster-show m))))
 	 *monsters*)))
 
+;; generic monster
 (defstruct monster (health (randval 10)))
 
 (defmethod monster-hit (m x)
@@ -133,5 +135,95 @@
 	     (princ x)
 	     (princ " health points! "))))
 
-		    
+(defmethod monster-show (m)
+  (princ "A fierce ")
+  (princ (type-of m)))
+
+(defmethod monster-attack (m))
+
+;; orc
+(defstruct (orc (:include monster)) (club-level (randval 8)))
+(push #'make-orc *monster-builders*)
+
+(defmethod monster-show ((m orc))
+  (princ "A wicked orc with a level ")
+  (princ (orc-club-level m))
+  (princ " club."))
+
+(defmethod monster-attack ((m orc))
+  (let ((x (randval (orc-club-level m))))
+    (princ "An orc swings his club at you and knocks off ")
+    (princ x)
+    (princ " of your helth points.")
+    (fresh-line)
+    (decf *player-health* x)))
+
+;; hydra
+(defstruct (hydra (:include monster)))
+(push #'make-hydra *monster-builders*)
+
+(defmethod monster-show ((m hydra))
+  (princ "A malicious hydra with ")
+  (princ (monster-health m))
+  (princ " heads."))
+
+(defmethod monster-hit ((m hydra) x)
+  (decf (monster-health m) x)
+  (if (monster-dead m)
+      (progn (princ "The corpse of the fully decaptated hydra falls to the floor!")
+	     (fresh-line))
+      (progn (princ "You lof off ")
+	     (princ x)
+	     (princ " of hydra's heads!"))))
+
+(defmethod monster-attack ((m hydra))
+  (let ((x (randval (monster-health m))))
+    (princ "An hydra attacks you with ")
+    (princ x)
+    (princ " of its heads!")
+    (fresh-line)
+    (princ "It alos grows back one more head!")
+    (fresh-line)
+    (incf (monster-health m))
+    (decf *player-health* x)))
+
+;; slime
+(defstruct (slime-mold (:include monster)) (sliminess (randval 5)))
+(push #'make-slime-mold *monster-builders*)
+
+(defmethod monster-show ((m slime-mold))
+  (princ "A slime mold with a sliminess of ")
+  (princ (slime-mold-sliminess m)))
+
+(defmethod monster-attack ((m slime-mold))
+  (let ((x (randval (slime-mold-sliminess m))))
+    (princ "A slime mold wraps around your legs and decreases your agility by ")
+    (princ x)
+    (princ "!")
+    (fresh-line)
+    (decf *player-agility* x)
+    (when (zerop (random 2))
+      (fresh-line)
+      (princ "It alos squirts in your face, taking away a health point! ")
+      (fresh-line)
+      (decf *player-health*))))
+
+;; brigand
+(defstruct (brigand (:include monster)))
+(push #'make-brigand *monster-builders*)
+
+(defmethod monster-atrtack ((m brigand))
+  (let ((x (max *player-health* *player-agility* *player-strength*)))
+    (cond ((= x *player-health*)
+	   (princ "A brigand hits you with his slingshot, taking off 2 health points! ")
+	   (fresh-line)
+	   (decf *player-health* 2))
+	  ((= x *player-agility*)
+	   (princ "A brigand cathes your leg with his whip, taking off 2 agility points! ")
+	   (fresh-line)
+	   (decf *player-agility* 2))
+	  ((= x *player-strength*)
+	   (princ "A brigand cuts your arm with his whip, taking off 2 strength points! ")
+	   (fresh-line)
+	   (decf *player-strength* 2)))))
   
