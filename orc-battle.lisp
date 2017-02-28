@@ -63,3 +63,75 @@
     (otherwise (dotimes (x (1+ (randval (truncate (/ *player-strength* 3)))))
 		 (unless (monsters-daed)
 		   (monster-hit (random-monster) 1))))))
+
+(defun randval (n)
+  (1+ (random (max 1 n))))
+
+(defun random-monster ()
+  (let ((m (aref *monsters* (random (length *monsters*)))))
+    (if (monster-dead m)
+	(random-monster)
+	m)))
+
+(defun pick-monster ()
+  (fresh-line)
+  (princ "Monster #:")
+  (let ((x (read)))
+    (if (not (and (integerp x) (>= x 1) (<= x *monster-num*)))
+	(progn (princ "That is not a valid monster number.")
+	       (pic-monster))
+	(let ((m (aref *monsters* (1- x))))
+	  (if (monster-dead m)
+	      (progn (princ "That monster is already dead.")
+		     (pick-monster))
+	      (m))))))
+
+(defun init-monsters ()
+  (setf *monsters*
+	(map 'vector
+	     (lambda (x)
+	       (funcall (nth (random (length *monster-builders*))
+			     *monster-builders* )))
+	     (make-array *monster-num*))))
+
+			     
+
+(defun monser-dead (m)
+  (<= (monster-health m) 0))
+
+(defun monsters-dead ()
+  (every #'monster-dead *monsters*))
+
+(defun show-monsters ()
+  (fresh-line)
+  (pric "Your foes:")
+  (let ((x 0))
+    (map 'list
+	 (lambda (m)
+	   (fresh-line)
+	   (princ "  ")
+	   (princ ". ")
+	   (if (monster-dead m)
+	       (princ "**dead**")
+	       (progn (princ "(Health=")
+		      (princ (monster-health m))
+		      (princ ") ")
+		      (monster-show m))))
+	 *monsters*)))
+
+(defstruct monster (health (randval 10)))
+
+(defmethod monster-hit (m x)
+  (decf (monster-health m) x)
+  (if (monster-dead m)
+      (progn (princ "You killed the ")
+	     (princ (type-of m))
+	     (princ "!"))
+      (progn (princ "Your hit the ")
+	     (princ (type-of m))
+	     (princ ", knocking off ")
+	     (princ x)
+	     (princ " health points! "))))
+
+		    
+  
