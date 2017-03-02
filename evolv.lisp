@@ -44,11 +44,15 @@
 
 (defun turn (animal)
   (let ((x (random (apply #'+ (animal-genes animal)))))
-    (print x)
     (labels ((angle (genes x)
+	       ;; (princ "genes: ")
+	       ;; (prin1 genes)
+	       ;; (print "x: ")
+	       ;; (prin1 x)
+	       ;; (fresh-line)
 	       (let ((xnu (- x (car genes))))
-		 (if (< xnu 0)
+		 (if (or (not genes) (< xnu 0))
 		     0
-		     (1+ (angle (cdr genes) x))))))
+		     (1+ (angle (cdr genes) xnu))))))
       (setf (animal-dir animal)
 	    (mod (+ (animal-dir animal) (angle (animal-genes animal) x)) 8)))))
