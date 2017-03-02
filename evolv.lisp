@@ -109,6 +109,7 @@
 (defun evolution ()
   (draw-world)
   (fresh-line)
+  (princ "> ")
   (let ((str (read-line)))
     (cond ((equal str "quit") ())
 	  (t (let ((x (parse-integer str :junk-allowed t)))
